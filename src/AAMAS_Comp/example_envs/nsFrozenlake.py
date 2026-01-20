@@ -4,7 +4,11 @@ from ns_gym.schedulers import ContinuousScheduler
 import gymnasium as gym
 
 
-def make_env():
+def make_env(**kwargs):
+
+    change_notification = kwargs.get("change_notification", False)
+    delta_change_notification = kwargs.get("delta_change_notification", False)
+
     base_env = gym.make("FrozenLake-v1").unwrapped
     scheduler = ContinuousScheduler()
 
@@ -15,8 +19,8 @@ def make_env():
 
     ns_env = NSFrozenLakeWrapper(base_env,
                                 tunable_params=tunable_params,
-                                change_notification=True,
-                                delta_change_notification=True,
+                                change_notification=change_notification,
+                                delta_change_notification=delta_change_notification,
                                 initial_prob_dist=[1,0,0])
     
     return ns_env

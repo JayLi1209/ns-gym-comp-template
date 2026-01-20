@@ -3,10 +3,13 @@ from ns_gym.wrappers import NSClassicControlWrapper
 from ns_gym.schedulers import ContinuousScheduler, PeriodicScheduler
 from ns_gym.update_functions import RandomWalk, IncrementUpdate
 
-def make_env():
-    base_env = gym.make("CartPole-v1").unwrapped
+def make_env(**kwargs):
 
-    scheduler = ContinuousScheduler()
+    
+    change_notification = kwargs.get("change_notification", False)
+    delta_change_notification = kwargs.get("delta_change_notification", False)
+
+    base_env = gym.make("CartPole-v1").unwrapped
 
     scheduler_1 = ContinuousScheduler()
     scheduler_2 = PeriodicScheduler(period=3)
@@ -19,7 +22,10 @@ def make_env():
     tunable_params = {"masspole":update_function1, "gravity": update_function2}
 
     ######## Step 5: set notification level and pass environment and parameters into wrapper
-    ns_env = NSClassicControlWrapper(base_env,tunable_params,change_notification=True)
+    ns_env = NSClassicControlWrapper(base_env, 
+                                     tunable_params,
+                                     change_notification=change_notification,
+                                     delta_change_notification= delta_change_notification)
     
     return ns_env
     
