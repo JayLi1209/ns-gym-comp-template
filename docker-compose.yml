@@ -1,0 +1,21 @@
+services:
+  # Development environment 
+  dev:
+    build:
+      context: .
+      dockerfile: docker/eval.Dockerfile
+    volumes:
+      - .:/app
+    environment:
+      - ENV=development
+    command: /bin/bash
+
+  # "Dry-run" of your evaluation logic
+  test-submission:
+    build:
+      context: .
+      dockerfile: docker/eval.Dockerfile
+    volumes:
+      - ./src/submission.py:/app/submission.py
+      - ./src/evaluator.py:/app/evaluator.py
+    command: ["uv", "run", "python", "evaluator.py", "--mode", "local"]
