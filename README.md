@@ -1,133 +1,201 @@
-# Code Template for AAMAS 2026 Competition: Evaluating Adaptive Decision Agents under Non-Stationarity 
+# AAMAS 2026 Competition: Evaluating Adaptive Decision Agents under Non-Stationarity
 
-This repository contains instructions, evaluation code, and other boilerplate code to get started using NS-Gym for the AAMAS 2026 Competition: Evaluating Adaptive Decision Agents under Non-Stationarity. Please refer to the [competition website](https://nsgym.io/aamas2026_competition.html) for more details about the competition. This competition is entirly based on the [NS-Gym](https://nsgym.io) framework for evaluating adaptive decision agents under non-stationarity.
+This repository contains evaluation code, example agents, and boilerplate to get started with the [NS-Gym](https://nsgym.io) framework for the [AAMAS 2026 Competition](https://nsgym.io/aamas2026_competition.html).
 
 ## Set Up
 
-Fork this repository to your own GitHub account and clone it to your local machine. You can either setpup a virtual environment or use Docker to manage dependencies.
+Fork this repository and clone it locally. Use either `uv` (recommended) or Docker.
 
 ### Virtual Environment
 
-We use `uv` to manage our virtual environment. Visit [this link to install uv](https://docs.astral.sh/uv/getting-started/installation). To set up the environment, run the following commands:
-
-1. **Fork** the repository on GitHub and if you like clone it as a private repository. 
-
-2. Clone the repository to your local machine (be sure to update your GitHub username), i.e
+Install [uv](https://docs.astral.sh/uv/getting-started/installation), then:
 
 ```bash
 git clone https://github.com/{your-username}/ns-gym-comp-template.git
-```
-
-3. Navigate to the project directory, make a new virtual environment, and activate it. **We are using Python 3.13** for this competition.
-
-```bash
 cd ns-gym-comp-template
 uv venv --python 3.13
-uv .venv/bin/activate
-```
-4. Install this competition template as a package in editable mode
-
-```bash
+source .venv/bin/activate
 uv pip install -e .
 ```
 
-Installing the competition package will pip install NS-Gym, Stable-Baselines3, PyTorch, Numpy, Pandas, Mujoco, Tensorboard and other dependencies.
-
-To view all installed packages, run:
-
-```bash
-uv pip list
-```
-
-
+This installs NS-Gym, Stable-Baselines3, PyTorch, Gymnasium, MuJoCo, and other dependencies. Verify with `uv pip list`.
 
 ### Docker
-Alternatively, you can use Docker to set up the environment. Make sure you have Docker installed on your machine. Then, build the Docker image using the provided Dockerfile:
+
+Build the evaluation container:
 
 ```bash
-docker build -t ns-gym-comp .
+docker build -f docker/eval.Dockerfile -t ns-gym-comp .
 ```
 
-**We will be evaluating all agent using this Docker image so please ensure your agent runs correctly within this environment.**
+All submitted agents will be evaluated using this Docker image. Ensure your agent runs correctly within it.
 
+## Project Structure
 
-
-## Accessing Competition Template Code
-
-The competition code is organized as a Python package named `AAMAS_Comp`. You can import this package in your Python scripts or Jupyter notebooks to access the competition environments and evaluation code. For example:
-
-```python
-import AAMAS_Comp
-``` 
-
+```
+evaluator.py                            # Runs submitted agent against all environments
+submission.py                           # YOUR entrypoint -- wire up your agent here
+src/AAMAS_Comp/
+    __init__.py                         # Environment registration
+    base_agent.py                       # ModelBasedAgent, ModelFreeAgent, SB3Agent
+    agent.py                            # YOUR agent implementation goes here
+    evaluation/
+        evaluate_agent.py               # Episode runner and evaluation harness
+        utils.py                        # Metric utilities
+    examples/
+        agents/                         # Baseline agent wrappers
+            mcts_example.py             # MCTS (model-based)
+            ppo_example.py              # PPO (model-free, SB3)
+            sac_example.py              # SAC (model-free, SB3)
+        environments/                   # Pre-configured NS environments
+            nsFrozenlake.py
+            nsCartpole.py
+            nsAnt.py
+examples/                               # Standalone train/eval scripts
+    mcts_example.py
+    ppo_example.py
+    sac_example.py
+docker/
+    base.Dockerfile                     # Base image with dependencies
+    eval.Dockerfile                     # Evaluation image for submissions
+docker-compose.yml                      # Dev and test-submission services
+```
 
 ## Developing Your Agent
 
-Implement your agent within the [src/AAMAS_Comp/agent.py](src/AAMAS_Comp/agent.py) and impoort all and all its dependencies into this file. Your agent will be a contained within a unfied `ModelBasedAgent` or `ModelFreeAgent` subclass. Be sure to add any additional dependencies to pyproject.toml so they are included in the Docker image. You can do this using the following command:
+Implement your agent in [src/AAMAS_Comp/agent.py](src/AAMAS_Comp/agent.py). Your agent must subclass either `ModelBasedAgent` or `ModelFreeAgent` from `base_agent.py`. Import all dependencies into this file.
+
+**Do not modify `base_agent.py`** -- the competition evaluator uses its own copy.
+
+### Agent Types
+
+**ModelBasedAgent** -- receives a planning environment for lookahead search:
+
+```python
+class ModelBasedAgent(Agent):
+    def get_action(self, obs: Dict, planning_env: gym.Env):
+        # Use planning_env for simulation/search
+        ...
+```
+
+**ModelFreeAgent** -- receives only the observation:
+
+```python
+class ModelFreeAgent(Agent):
+    def get_action(self, obs: Dict):
+        # Select action from observation alone
+        ...
+```
+
+Both agent types are timed via `validate_and_get_action()` during evaluation. Actions are validated against the action space.
+
+Add any new dependencies to `pyproject.toml`:
 
 ```bash
 uv add <package-name>
 ```
 
-Please see the [examples](examples) directory for example agents to get started. We provide example agents using [Stable-Baselines3](https://stable-baselines3.readthedocs.io/en/master/) RL implemenations, NS-Gym baseline implementations as well as custom implementations specifict to this competition.
+## Pre-configured Environments
 
-## Competition Environments
+Three non-stationary environments are registered and ready to use. Each wraps a standard Gymnasium environment with NS-Gym schedulers and update functions that modify environment parameters over time. Environment source code is in [src/AAMAS_Comp/examples/environments/](src/AAMAS_Comp/examples/environments/).
 
-We provide three pre-configured competition environments under the [src/AAMAS_Comp/example_envs](src/AAMAS_Comp/example_envs) directory. These environments are ready to be used for training and evaluating your agent. You can also create your own custom environments by following the NS-Gym documentation. In addition to the pre-configured environments, competition organizers will provide additional hidden environments for the final evaluation.
-
-### Pre-configured Environments
-
-Pre-configured competition environments can be built by using the Gymnasium `make` function with the appropriate environment ID. Below are the environment IDs for the pre-configured competition environments:
-
-#### Non-Stationary FrozenLake
+All environments accept `change_notification` and `delta_change_notification` kwargs to control whether the agent is informed of parameter changes.
 
 ```python
-import gymnasium as gym 
-import AAMAS_Comp
+import gymnasium as gym
+import AAMAS_Comp  # triggers environment registration
 
-
-change_notification = True
-delta_change_notification = True
-
-ns_frozenlake_env = gym.make("ExampleNSFrozenLake-v0", change_notification=change_notification, delta_change_notification=delta_change_notification)
+env = gym.make("ExampleNSFrozenLake-v0", change_notification=True, delta_change_notification=True)
 ```
 
+### ExampleNSFrozenLake-v0
 
-#### Non-Stationary CartPole
+Wraps `FrozenLake-v1` (discrete, 16 states, 4 actions). Transition probabilities `P` are decremented by 0.025 each step via `DistributionDecrementUpdate` on a `ContinuousScheduler`, making the surface progressively more slippery.
 
+### ExampleNSCartPole-v0
 
+Wraps `CartPole-v1` (continuous state, 2 discrete actions). Two parameters change simultaneously:
+- **masspole**: increases by 0.1 each step (`IncrementUpdate`, `ContinuousScheduler`)
+- **gravity**: random walk every 3 steps (`RandomWalk`, `PeriodicScheduler`)
+
+### ExampleNSAnt-v0
+
+Wraps `Ant-v5` (continuous state/action, MuJoCo). The `torso_mass` decays exponentially with rate 0.9 (`ExponentialDecay`, `PeriodicScheduler` with period 500, active from step 100 to 500), making the ant progressively lighter.
+
+### Competition Evaluation Environments
+
+Final evaluation will use the same three base environments (FrozenLake, CartPole, Ant), but the nature of non-stationarity will differ from the pre-configured examples above. The specific schedulers, update functions, tunable parameters, and their configurations will be different and are not disclosed in advance.
+
+Participants are encouraged to construct and experiment with different non-stationarity conditions beyond the provided examples to build agents that generalize across varying forms of environmental change. See the [NS-Gym documentation](https://nsgym.io) for available schedulers, update functions, and tunable parameters.
+
+## Examples
+
+Standalone scripts in the [examples/](examples/) directory demonstrate training and evaluation. Corresponding agent wrappers are in [src/AAMAS_Comp/examples/agents/](src/AAMAS_Comp/examples/agents/).
+
+### MCTS (`examples/mcts_example.py`)
+
+Evaluates the NS-Gym MCTS implementation (with chance nodes) on `ExampleNSFrozenLake-v0`. This is a **model-based** agent that uses the planning environment for tree search. Configured with rollout depth 50, 100 iterations, UCT constant 1.4, and discount 0.99.
+
+```bash
+python examples/mcts_example.py
+```
+
+### PPO (`examples/ppo_example.py`)
+
+Trains Stable-Baselines3 PPO on stationary `Ant-v5` with RL Zoo3 tuned hyperparameters and `VecNormalize`, then evaluates on `ExampleNSAnt-v0`. This is a **model-free** agent. VecNormalize statistics are saved alongside the model and loaded during evaluation to normalize observations.
+
+```bash
+python examples/ppo_example.py
+```
+
+### SAC (`examples/sac_example.py`)
+
+Trains Stable-Baselines3 SAC on stationary `Ant-v5` with default hyperparameters, then evaluates on `ExampleNSAnt-v0`. This is a **model-free** agent. SAC does not require `VecNormalize`, making the pipeline simpler than PPO.
+
+```bash
+python examples/sac_example.py
+```
+
+## Evaluation
+
+The evaluation harness is in [src/AAMAS_Comp/evaluation/evaluate_agent.py](src/AAMAS_Comp/evaluation/evaluate_agent.py). The competition uses the same harness to evaluate all submissions.
 
 ```python
-import gymnasium as gym 
-import AAMAS_Comp
+from AAMAS_Comp.evaluation import run_complete_evaluation
 
-
-change_notification = True
-delta_change_notification = True
-
-ns_cartpole_env = gym.make("ExampleNSCartPole-v0", change_notification=change_notification, delta_change_notification=delta_change_notification)
+run_complete_evaluation(
+    env=ns_env,
+    agent=agent,
+    start_seed=42,
+    num_episodes=10,
+    name_prefix="MyAgent",
+)
 ```
 
-#### Non-Stationary MujoCo Ant
+This runs `num_episodes` episodes with deterministic sequential seeding (`start_seed`, `start_seed + 1`, ...) and saves to `results/{name_prefix}/`:
+- `{name_prefix}.zip` -- compressed per-step metrics (observations, actions, rewards, decision times, environment changes)
+- `metadata.json` -- seed range, episode count, total wall time
+- `summary.json` -- per-episode and aggregate statistics (mean reward, decision time, number of transition function changes)
 
+### Docker Evaluation
+
+Edit [submission.py](submission.py) to wire up your agent. The evaluator calls `get_agent(env_id)` once per base environment, passing the environment ID (`"FrozenLake-v1"`, `"CartPole-v1"`, or `"Ant-v5"`). Use this to load environment-specific model weights, hyperparameters, or agent classes:
 
 ```python
-import gymnasium as gym 
-import AAMAS_Comp
-
-
-change_notification = True
-delta_change_notification = True
-
-ns_ant_env = gym.make("ExampleNSAnt-v0", change_notification=change_notification, delta_change_notification=delta_change_notification)
+def get_agent(env_id: str):
+    if env_id == "Ant-v5":
+        model = PPO.load("models/ppo_ant/ppo_ant.zip")
+        return MyModelFreeAgent(model=model)
+    elif env_id == "FrozenLake-v1":
+        return MyModelBasedAgent(d=50, m=100)
+    elif env_id == "CartPole-v1":
+        return MyModelFreeAgent()
 ```
 
-## Evaluating Agents
+Then test locally:
 
-The primary entry point for evaluating agents is the [evaluation/evaluate_agent.py](evaluation/evaluate_agent.py) script. You can run this script to evaluate your agent on the competition environments. Competition organizars will use the same script to evaluate all submitted agents. 
+```bash
+docker compose run test-submission
+```
 
-
-
-
-
-
+This runs [evaluator.py](evaluator.py) inside the container against all three competition environments. The `test-submission` service mounts your `submission.py` and `src/` so changes are picked up without rebuilding.

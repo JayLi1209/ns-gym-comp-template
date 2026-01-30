@@ -14,7 +14,7 @@ class ModelBasedAgent(Agent):
         super().__init__()
 
     def get_action(self, obs: Dict, planning_env: gym.Env):
-        raise NotImplementedError
+        raise NotImplementedError("Please implement get_action method")
     
     def act(self, obs, planning_env):
         """Agent sub-class requries this method to be implemented
@@ -36,6 +36,7 @@ class ModelBasedAgent(Agent):
         decision_time = end_time - start_time
     
         return action, decision_time
+    
 
 
 class ModelFreeAgent(Agent):
@@ -43,7 +44,7 @@ class ModelFreeAgent(Agent):
         super().__init__()
 
     def get_action(self, obs: Dict):
-        raise NotImplementedError
+        raise NotImplementedError("Please implement get_action method")
 
     def act(self, obs):
         return self.get_action(obs)
@@ -59,3 +60,28 @@ class ModelFreeAgent(Agent):
         decision_time = end_time - start_time
 
         return action, decision_time
+    
+
+
+class SB3Agent(ModelFreeAgent):
+    """Generic wrapper for any pre-trained Stable Baselines 3 model.
+
+    Args:
+        model: A trained SB3 model instance (e.g. PPO, A2C, DQN).
+        deterministic (bool): Use deterministic actions. Defaults to True.
+        vec_normalize: A VecNormalize instance for observation normalization.
+            Required if the model was trained with VecNormalize.
+    """
+
+    def __init__(self, model, deterministic=True, vec_normalize=None) -> None:
+        super().__init__()
+        self.model = model
+        self.deterministic = deterministic
+        self.vec_normalize = vec_normalize
+
+    def get_action(self, obs: Dict):
+        state = obs["state"]
+        if self.vec_normalize is not None:
+            state = self.vec_normalize.normalize_obs(state)
+        action, _ = self.model.predict(state, deterministic=self.deterministic)
+        return action
