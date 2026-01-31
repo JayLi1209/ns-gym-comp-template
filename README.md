@@ -28,9 +28,7 @@ git merge upstream/main --allow-unrelated-histories
 
 ### Virtual Environment
 
-After 
-
-Install [uv](https://docs.astral.sh/uv/getting-started/installation), then:
+After cloning your repository, create a virtual environment and install the `AAMAS_Comp` package. Install [uv](https://docs.astral.sh/uv/getting-started/installation), then:
 
 ```bash
 uv venv --python 3.13
@@ -38,7 +36,7 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-This installs NS-Gym, Stable-Baselines3, PyTorch, Gymnasium, MuJoCo, and other dependencies. Verify with `uv pip list`.
+This installs NS-Gym, Stable-Baselines3, PyTorch, Gymnasium, MuJoCo, and other dependencies. Verify with `uv pip list`. To install additional dependecies add them with `uv add <package-name>`
 
 ### Docker
 
