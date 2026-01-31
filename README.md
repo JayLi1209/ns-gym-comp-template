@@ -4,19 +4,19 @@ This repository contains evaluation code, example agents, and boilerplate to get
 
 ## Set Up
 
-1. Click **"Use this template"** at the top of this page to create your own repository (private or public).
+1. Click **"Use this template"** at the top of this page to create your own repository (private or public) called `ns-gym-comp-submission`.
 
 2. Clone your new repository and add this template as an upstream remote so you can pull future updates (new environments, examples, evaluation changes, etc.):
 
 ```bash
 git clone https://github.com/{your-username}/ns-gym-comp-submission.git
 cd ns-gym-comp-submission
-git remote add upstream https://github.com/{organizer}/ns-gym-comp-template.git
+git remote add upstream https://github.com/scope-lab-vu/ns-gym-comp-template.git
 ```
 
 3. Add the competition organizers -- [nkepling](https://github.com/nkepling) and [ayanmukhopadhyay](https://github.com/ayanmukhopadhyay) -- as **collaborators** on your repository so we can clone, run, and evaluate your submission.
 
-4. When ready to submit, [open an issue](https://github.com/{organizer}/ns-gym-comp-template/issues/new) on this template repository with a link to your submission repo.
+4. When ready to submit, [open an issue](https://github.com/scope-lab-vu/ns-gym-comp-template/issues/new) on this template repository with a link to your submission repo.
 
 To pull template updates at any time:
 
@@ -27,6 +27,8 @@ git merge upstream/main --allow-unrelated-histories
 
 
 ### Virtual Environment
+
+After 
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation), then:
 
