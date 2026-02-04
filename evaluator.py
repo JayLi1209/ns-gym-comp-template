@@ -10,7 +10,7 @@ from collections import namedtuple
 from submission import get_agent
 
 #Uncomment this line to run baseline models from example submission. 
-#from example_submission import get_agent
+from example_submission import get_agent
 
 #Add additional envionments here or comment out the ones you do not want to evaluate. 
 ENVIRONMENTS = {

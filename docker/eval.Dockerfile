@@ -1,13 +1,10 @@
-FROM python:3.13-slim
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
+# Evaluation image -- edit this file to add custom non-Python dependencies
+FROM ns-gym-base
 
-WORKDIR /comp
+# ---- Add custom dependencies below this line ----
+# System packages:  RUN apt-get update && apt-get install -y <package>
+# Python packages:  RUN uv pip install <package>
 
-# Install dependencies first (cached layer)
-COPY pyproject.toml ./
-RUN uv sync --no-install-project
-
-# Copy source and install the project
 COPY src/ ./src/
 RUN uv pip install -e . --no-deps
 

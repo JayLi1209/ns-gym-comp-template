@@ -27,19 +27,19 @@ def get_agent(env_id: str):
         ####################
         ## YOUR CODE HERE ##
         ####################
-        raise NotImplementedError
+        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
 
     elif env_id == "FrozenLake-v1":
         ####################
         ## YOUR CODE HERE ##
         ####################
-        raise NotImplementedError
+        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
 
     elif env_id == "CartPole-v1":
         ####################
         ## YOUR CODE HERE ##
         ####################
-        raise NotImplementedError
+        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
 
     else:
-        raise NotImplementedError
+        raise ValueError(f"{env_id} not in: Ant-v5, FrozenLake-v1, CartPole-v1")

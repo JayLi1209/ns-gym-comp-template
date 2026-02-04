@@ -20,7 +20,7 @@ class AAMASCompBaselineMCTS(ModelBasedAgent):
         d (int): Random roll out depth
         m (int): Number of MCTS Iterations
         c (float): UCT exploration constant. Defaults to 1.4.
-        gamma (float): Cummulative reward dsicount factor. Defaults to 0.99
+        gamma (float): Cummulative reward discount factor. Defaults to 0.99
     """
 
     def __init__(self, d, m, c=1.4, gamma=0.99) -> None:
