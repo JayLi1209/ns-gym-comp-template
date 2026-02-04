@@ -10,17 +10,14 @@ class MyModelBasedAgent(ModelBasedAgent):
 
     def __init__(self):
         """YOUR CODE HERE
-
-        Feel free to
         """
-
         raise NotImplementedError
 
 
     def get_action(self, obs: Dict, planning_env):
         """YOUR CODE HERE
         """
-        return planning_env.action_space.sample()
+        raise NotImplementedError
     
     def set_seed(self, seed):
         raise NotImplementedError

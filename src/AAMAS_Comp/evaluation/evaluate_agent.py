@@ -110,8 +110,11 @@ def run_complete_evaluation(env, agent, start_seed, num_episodes, name_prefix, s
         "start_seed": start_seed,
         "end_seed": start_seed + num_episodes - 1,
         "num_episodes": num_episodes,
+        "change_notification": env.change_notification, 
+        "delta_change_notification": env.delta_change_notification,
         "total_time_seconds": total_time,
         "timestamp": datetime.now().isoformat(),
+        
     }
 
     with open(experiment_dir / "metadata.json", "w") as f:

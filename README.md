@@ -1,8 +1,62 @@
 # AAMAS 2026 Competition: Evaluating Adaptive Decision Agents under Non-Stationarity
 
-This repository contains evaluation code, example agents, and boilerplate to get started with the [NS-Gym](https://nsgym.io) framework for the [AAMAS 2026 Competition](https://nsgym.io/aamas2026_competition.html).
+This repository contains evaluation code, example agents, and boilerplate to get started with the [NS-Gym](https://nsgym.io) framework for the [AAMAS 2026 Competition](https://nsgym.io/aamas2026_competition.html). There are several files in this repository but only **two** need to be directly edited by you, the competition participant. 
 
-## Set Up
+
+## Summary 
+
+### What Is The Competition?
+
+This competition, co-located with AAMAS 2026, invites researchers and practitioners to develop and evaluate decision-making agents that can effectively adapt to non-stationary environments using the NS-Gym framework. Participants will design agents capable of detecting, adapting to, and recovering from dynamic environmental shifts. The solution method is open to any approach, including but not limited to reinforcement learning, online planning, meta-learning, and continuous learning. The competition aims to foster innovation in adaptive decision-making and provide insights into the challenges of non-stationary environments. Results will be presented at the AAMAS 2026 conference. 
+
+The competition will focus on designing decision-making agents for three base environments: [FrozenLake](https://nsgym.io/env_pages/toytext/frozenlake.html), [CartPole](https://nsgym.io/env_pages/classic_control/cartpole.html), and [MuJoCo Ant](https://nsgym.io/env_pages/mujoco/antenv.html). While the problem class remains the same, the nature of non-stationarity will differ. We provide three pre-configured non-stationary versions of these environments. During evaluation, we will evaluate performance on these environments and a holdout set of other non-stationary configurations. Please see the [Environments](#environments) section of this README for details about pre-configured environments and how to create your own non-stationary MDPs.
+
+### What Will You Implement?
+
+1. [src/AAMAS_Comp/agent.py](src/AAMAS_Comp/agent.py): Implement your core agent logic here. This integrates the agent as part of the `AAMAS_Comp` package. See example agents in this directory [src/AAMAS_Comp/examples/agents](src/AAMAS_Comp/examples/agents).
+2. [submission.py](submission.py): Fill in the `get_agent()` function in this file to configure your agent for each environment: load model weights, set hyperparameters, etc. See [example_submission.py](example_submission.py) for an example.
+
+### How Can You Evaluate Your Agent? 
+
+Running the [evaluator.py](evaluator.py) script will evaluate your agent against all provided example environments. Feel free to edit the `ENVIRONMENTS` dictionary to add additional configured non-stationary environments. This script will generate a `results` directory that contains evaluation results. Please see the [Environments](#environments) section of this README for details about pre-configured environments and how to create your own non-stationary MDPs.
+
+```{python}
+python evaluator.py
+```
+
+## Repo Structure
+
+```
+evaluator.py                            # Runs submitted agent against all environments
+submission.py                           # YOUR entrypoint -- wire up your agent here
+src/AAMAS_Comp/
+    __init__.py                         # Environment registration
+    base_agent.py                       # ModelBasedAgent, ModelFreeAgent, SB3Agent
+    agent.py                            # YOUR agent implementation goes here
+    evaluation/
+        evaluate_agent.py               # Episode runner and evaluation harness
+        utils.py                        # Metric utilities
+    examples/
+        agents/                         # Baseline agent wrappers
+            mcts_example.py             # MCTS (model-based)
+            ppo_example.py              # PPO (model-free, SB3)
+            sac_example.py              # SAC (model-free, SB3)
+        environments/                   # Pre-configured NS environments
+            nsFrozenlake.py
+            nsCartpole.py
+            nsAnt.py
+examples/                               # Standalone train/eval scripts
+    mcts_example.py
+    ppo_example.py
+    sac_example.py
+docker/
+    base.Dockerfile                     # Base image with dependencies
+    eval.Dockerfile                     # Evaluation image for submissions
+docker-compose.yml                      # Dev and test-submission services
+```
+
+
+## Development Environment Set Up
 
 1. Click **"Use this template"** at the top of this page to create your own repository (private or public) called `ns-gym-comp-submission`.
 
@@ -36,7 +90,7 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-This installs NS-Gym, Stable-Baselines3, PyTorch, Gymnasium, MuJoCo, and other dependencies. Verify with `uv pip list`. To install additional dependecies add them with `uv add <package-name>`
+This installs NS-Gym, Stable-Baselines3, PyTorch, Gymnasium, MuJoCo, and other dependencies. Verify with `uv pip list`. To install additional dependencies, add them with `uv add <package-name>`.
 
 ### Docker
 
@@ -48,36 +102,7 @@ docker build -f docker/eval.Dockerfile -t ns-gym-comp .
 
 All submitted agents will be evaluated using this Docker image. Ensure your agent runs correctly within it.
 
-## Project Structure
 
-```
-evaluator.py                            # Runs submitted agent against all environments
-submission.py                           # YOUR entrypoint -- wire up your agent here
-src/AAMAS_Comp/
-    __init__.py                         # Environment registration
-    base_agent.py                       # ModelBasedAgent, ModelFreeAgent, SB3Agent
-    agent.py                            # YOUR agent implementation goes here
-    evaluation/
-        evaluate_agent.py               # Episode runner and evaluation harness
-        utils.py                        # Metric utilities
-    examples/
-        agents/                         # Baseline agent wrappers
-            mcts_example.py             # MCTS (model-based)
-            ppo_example.py              # PPO (model-free, SB3)
-            sac_example.py              # SAC (model-free, SB3)
-        environments/                   # Pre-configured NS environments
-            nsFrozenlake.py
-            nsCartpole.py
-            nsAnt.py
-examples/                               # Standalone train/eval scripts
-    mcts_example.py
-    ppo_example.py
-    sac_example.py
-docker/
-    base.Dockerfile                     # Base image with dependencies
-    eval.Dockerfile                     # Evaluation image for submissions
-docker-compose.yml                      # Dev and test-submission services
-```
 
 ## Developing Your Agent
 
@@ -113,7 +138,7 @@ Add any new dependencies to `pyproject.toml`:
 uv add <package-name>
 ```
 
-## Pre-configured Environments
+## Environments
 
 Three non-stationary environments are registered and ready to use. Each wraps a standard Gymnasium environment with NS-Gym schedulers and update functions that modify environment parameters over time. Environment source code is in [src/AAMAS_Comp/examples/environments/](src/AAMAS_Comp/examples/environments/).
 
@@ -146,9 +171,60 @@ Final evaluation will use the same three base environments (FrozenLake, CartPole
 
 Participants are encouraged to construct and experiment with different non-stationarity conditions beyond the provided examples to build agents that generalize across varying forms of environmental change. See the [NS-Gym documentation](https://nsgym.io) for available schedulers, update functions, and tunable parameters.
 
+#### Making Your Own Custom Environment
+
+You can create custom non-stationary environments by combining three components:
+
+1. **Base environment** -- one of the competition environments: `CartPole-v1`, `FrozenLake-v1`, or `Ant-v5`.
+2. **Schedulers** -- control *when* parameter changes occur. For example, `ContinuousScheduler` applies changes every step, while `PeriodicScheduler(period=n)` applies changes every `n` steps.
+3. **Update functions** -- define *how* parameters change. Each update function is paired with a scheduler. For example, `IncrementUpdate(scheduler, k=0.1)` adds a fixed increment each time the scheduler fires, and `RandomWalk(scheduler)` applies a random perturbation.
+
+Pair each tunable parameter name (matching the environment's internal attributes) with an update function in a dictionary, then pass everything to the appropriate NS-Gym wrapper (`NSClassicControlWrapper`, `NSFrozenLakeWrapper`, `NSMujocoWrapper`, etc.). You can also enable `change_notification` to receive alerts when parameters change and `delta_change_notification` to receive the magnitude of each change. The NS-Gym documentation has tables of all tunable parameters for each environment (e.g., [CartPole](https://nsgym.io/env_pages/classic_control/cartpole.html)). See [src/AAMAS_Comp/examples/environments/](src/AAMAS_Comp/examples/environments/) for full examples.
+
+The code below creates a CartPole environment where the cart mass oscillates every step and the pole mass follows a random walk every 5 steps:
+
+```python
+import gymnasium as gym
+from ns_gym.wrappers import NSClassicControlWrapper
+from ns_gym.schedulers import ContinuousScheduler, PeriodicScheduler
+from ns_gym.update_functions import RandomWalk, OscillatingUpdate
+
+def make_env(**kwargs):
+    change_notification = kwargs.get("change_notification", False)
+    delta_change_notification = kwargs.get("delta_change_notification", False)
+
+    base_env = gym.make("CartPole-v1")
+
+    scheduler_1 = ContinuousScheduler()
+    scheduler_2 = PeriodicScheduler(period=5)
+
+    update_function_1 = OscillatingUpdate(scheduler_1)
+    update_function_2 = RandomWalk(scheduler_2)
+
+    tunable_params = {"masscart": update_function_1, "masspole": update_function_2}
+
+    ns_env = NSClassicControlWrapper(base_env,
+                                     tunable_params,
+                                     change_notification=change_notification,
+                                     delta_change_notification=delta_change_notification)
+    return ns_env
+```
+
+To reuse this environment elsewhere, register it with Gymnasium's registration API. Add a `register()` call in [src/AAMAS_Comp/\_\_init\_\_.py](src/AAMAS_Comp/__init__.py) pointing to your `make_env` function:
+
+```python
+register(id="MyCustomNSCartPole-v0",
+         entry_point="AAMAS_Comp.examples.environments.my_custom_env:make_env",
+         disable_env_checker=True,
+         order_enforce=False)
+```
+
+You can then load it anywhere with `gym.make("MyCustomNSCartPole-v0")` and add the env ID to the `ENVIRONMENTS` dictionary in [evaluator.py](evaluator.py) to evaluate your agent on it.
+
+
 ## Examples
 
-Standalone scripts in the [examples/](examples/) directory demonstrate training and evaluation. Corresponding agent wrappers are in [src/AAMAS_Comp/examples/agents/](src/AAMAS_Comp/examples/agents/).
+Standalone scripts in the [baseline_algorithm_script_runners/](baseline_algorithm_script_runners/) directory demonstrate training and evaluation of baseline algorithms. Corresponding agent wrappers are in [src/AAMAS_Comp/examples/agents/](src/AAMAS_Comp/examples/agents/).
 
 ### MCTS (`examples/mcts_example.py`)
 
@@ -225,3 +301,6 @@ This runs [evaluator.py](evaluator.py) inside the container against all three co
 3. [Open an issue](https://github.com/scope-lab-vu/ns-gym-comp-template/issues/new) on this template repository with a link to your submission repo.
 
 
+## Some Details About the NS-Gym Pipeline
+
+In Gymnasium each envronment object represents a stand-alone Markov Decision Process. NS-Gym wraps these nevi
