@@ -4,13 +4,17 @@ services:
     build:
       context: .
       dockerfile: docker/base.Dockerfile
-    image: ns-gym-base
+    image: ns-gym-base:latest
 
   dev:
     platform: linux/amd64
     build:
       context: .
       dockerfile: docker/eval.Dockerfile
+      additional_contexts:
+        ns-gym-base: "service:base"
+    depends_on:
+      - base
     volumes:
       - .:/comp
     mem_limit: 32g
@@ -22,6 +26,10 @@ services:
     build:
       context: .
       dockerfile: docker/eval.Dockerfile
+      additional_contexts:
+          ns-gym-base: "service:base"
+    depends_on:
+      - base
     volumes:
       - ./submission.py:/comp/submission.py
       - ./example_submission.py:/comp/example_submission.py
