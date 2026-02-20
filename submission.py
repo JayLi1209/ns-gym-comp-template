@@ -1,13 +1,11 @@
-"""Submission file. FILL THIS IN
+"""Submission file.
 
-Import your agent into this file and configure it for each environment: load model weights, set hyperparameters, etc. The `get_agent()` function is called by `evaluator.py` to initialize and return your agent for the specific environment.
-
-See example_submission.py for an example. 
+Configure and return an agent for each competition base environment.
 """
 
 from pathlib import Path
-from AAMAS_Comp.agent import MyModelBasedAgent, ModelFreeAgent
-import gymnasium as gym
+from stable_baselines3 import PPO
+from AAMAS_Comp.agent import MyModelBasedAgent, MyModelFreeAgent
 
 
 def get_agent(env_id: str):
@@ -19,27 +17,20 @@ def get_agent(env_id: str):
             - "CartPole-v1"
             - "Ant-v5"
 
-    Returns: 
+    Returns:
         Agent: Your initialized agent object.
     """
     if env_id == "Ant-v5":
-
-        ####################
-        ## YOUR CODE HERE ##
-        ####################
-        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
+        model_path = Path("models/ppo_ant/ppo_ant.zip")
+        model = PPO.load(str(model_path))
+        return MyModelFreeAgent(model=model, deterministic=True)
 
     elif env_id == "FrozenLake-v1":
-        ####################
-        ## YOUR CODE HERE ##
-        ####################
-        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
+        # Minimal, valid model-based baseline.
+        return MyModelBasedAgent(seed=42)
 
     elif env_id == "CartPole-v1":
-        ####################
-        ## YOUR CODE HERE ##
-        ####################
-        raise NotImplementedError(f"Sumbission not implemented for {env_id}")
+        # Minimal, valid model-based baseline.
+        return MyModelBasedAgent(seed=42)
 
-    else:
-        raise ValueError(f"{env_id} not in: Ant-v5, FrozenLake-v1, CartPole-v1")
+    raise ValueError(f"{env_id} not in: Ant-v5, FrozenLake-v1, CartPole-v1")

@@ -1,6 +1,15 @@
 """Competition evaluator. Runs the submitted agent against competition environments."""
 
 import argparse
+import sys
+from pathlib import Path
+
+# Allow running `python evaluator.py` without installing the package first.
+PROJECT_ROOT = Path(__file__).resolve().parent
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
 import gymnasium as gym
 import AAMAS_Comp  # noqa: F401 -- triggers environment registration
 from AAMAS_Comp.evaluation import run_complete_evaluation
