@@ -15,19 +15,12 @@ class MyModelBasedAgent(ModelBasedAgent):
         del obs  # ignore observations...
         action_space = planning_env.action_space
 
+        # For FrozenLake and CartPole
         if isinstance(action_space, spaces.Discrete):
             return int(self._rng.integers(action_space.n))
 
-        if isinstance(action_space, spaces.Box):
-            low = np.where(np.isfinite(action_space.low), action_space.low, -1.0)
-            high = np.where(np.isfinite(action_space.high), action_space.high, 1.0)
-            return self._rng.uniform(low, high).astype(action_space.dtype)
-
-        return action_space.sample()
-
-    def set_seed(self, seed):
-        # unreachable
-        self._rng = np.random.default_rng(seed)
+    # def set_seed(self, seed):
+    #     self._rng = np.random.default_rng(seed)
 
 class MyModelFreeAgent(ModelFreeAgent):
     """Minimal model-free agent with optional SB3 model inference."""
@@ -38,9 +31,9 @@ class MyModelFreeAgent(ModelFreeAgent):
         self.action_space = action_space
         self.deterministic = deterministic
         self.vec_normalize = vec_normalize
-        self._rng = np.random.default_rng(seed)
 
     def get_action(self, obs):
+        # Only implemented for Ant-v5
         if self.model is not None:
             state = obs["state"]
             if self.vec_normalize is not None:
@@ -51,9 +44,6 @@ class MyModelFreeAgent(ModelFreeAgent):
         if self.action_space is None:
             raise ValueError("Provide either a trained model or an action_space.")
 
-        if isinstance(self.action_space, spaces.Discrete):
-            return int(self._rng.integers(self.action_space.n))
-
         if isinstance(self.action_space, spaces.Box):
             low = np.where(np.isfinite(self.action_space.low), self.action_space.low, -1.0)
             high = np.where(np.isfinite(self.action_space.high), self.action_space.high, 1.0)
@@ -61,8 +51,7 @@ class MyModelFreeAgent(ModelFreeAgent):
 
         return self.action_space.sample()
 
-    def set_seed(self, seed):
-        # unreachable
-        self._rng = np.random.default_rng(seed)
-        if self.action_space is not None and hasattr(self.action_space, "seed"):
-            self.action_space.seed(seed)
+    # def set_seed(self, seed):
+    #     self._rng = np.random.default_rng(seed)
+    #     if self.action_space is not None and hasattr(self.action_space, "seed"):
+    #         self.action_space.seed(seed)
