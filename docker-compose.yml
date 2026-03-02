@@ -1,13 +1,11 @@
 services:
   base:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: docker/base.Dockerfile
     image: ns-gym-base:latest
 
   dev:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: docker/eval.Dockerfile
@@ -22,7 +20,6 @@ services:
     command: /bin/bash
 
   test-submission:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: docker/eval.Dockerfile
