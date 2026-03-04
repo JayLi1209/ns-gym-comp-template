@@ -139,12 +139,9 @@ class TestSubmission:
         assert callable(get_agent)
 
     @pytest.mark.parametrize("env_id", ["FrozenLake-v1", "CartPole-v1", "Ant-v5"])
-    def test_get_agent_returns_valid_agent_or_not_implemented(self, env_id):
+    def test_get_agent_returns_valid_agent(self, env_id):
         from submission import get_agent
-        try:
-            agent = get_agent(env_id)
-        except NotImplementedError:
-            pytest.skip(f"submission.py not yet implemented for {env_id}")
+        agent = get_agent(env_id)
         assert isinstance(agent, (ModelBasedAgent, ModelFreeAgent)), (
             f"get_agent('{env_id}') must return a ModelBasedAgent or ModelFreeAgent, "
             f"got {type(agent)}"
