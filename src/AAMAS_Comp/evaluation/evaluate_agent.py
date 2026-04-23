@@ -8,6 +8,8 @@ from pathlib import Path
 from tqdm import tqdm
 import numpy as np
 
+from .benchmark import compute_benchmark_summary, print_benchmark_summary, save_benchmark_summary
+
 
 def _default_serializer(obj):
     if isinstance(obj, np.integer):
@@ -30,7 +32,7 @@ def run_single_episode(env, agent, seed):
         dict: A dictionary containing lists of rewards, observations, actions, and decision times.
     """
 
-    obs, reward = env.reset(seed=seed)
+    obs, _ = env.reset(seed=seed)
 
     done = False
     truncated = False
@@ -62,6 +64,16 @@ def run_single_episode(env, agent, seed):
 
 
 
+        ground_truth_change = info.get("Ground Truth Env Change", {})
+        if ground_truth_change:
+            env_changed = int(max(ground_truth_change.values()))
+        else:
+            observed_change = obs.get("env_change", 0)
+            if isinstance(observed_change, dict):
+                env_changed = int(max(observed_change.values(), default=0))
+            else:
+                env_changed = int(bool(observed_change))
+
         episode_metrics["step_number"].append(count)
         episode_metrics["observations"].append(obs["state"])
         episode_metrics["notification"].append(obs["env_change"])
@@ -69,12 +81,21 @@ def run_single_episode(env, agent, seed):
         episode_metrics["actions"].append(action)
         episode_metrics["decision_time"].append(decision_time)
         episode_metrics["info"].append(info)
-        episode_metrics["env_change"].append(max(info['Ground Truth Env Change'].values()))
+        episode_metrics["env_change"].append(env_changed)
+        count += 1
 
     return episode_metrics
 
 
-def run_complete_evaluation(env, agent, start_seed, num_episodes, name_prefix, save_dir="results/"):
+def run_complete_evaluation(
+    env,
+    agent,
+    start_seed,
+    num_episodes,
+    name_prefix,
+    save_dir="results/",
+    return_artifacts=False,
+):
     """Runs multiple episodes with deterministic sequential seeding. Saves results as Compressed JSON file.
     Args:
         env: The gymnasium environment wrapped with NSFrozenLakeWrapper.
@@ -168,6 +189,9 @@ def run_complete_evaluation(env, agent, start_seed, num_episodes, name_prefix, s
     with open(experiment_dir / "summary.json", "w") as f:
         json.dump(summary_data, f, indent=2, default=_default_serializer)
 
+    benchmark_data = compute_benchmark_summary(results_table)
+    save_benchmark_summary(benchmark_data, experiment_dir / "benchmark.json")
+
     print(f"\n{'='*50}")
     print(f"Evaluation Summary: {name_prefix}")
     print(f"{'='*50}")
@@ -178,7 +202,17 @@ def run_complete_evaluation(env, agent, start_seed, num_episodes, name_prefix, s
     print(f"Mean Episode Steps:  {aggregate['mean_episode_steps']:.1f}")
     print(f"Mean Decision Time:  {aggregate['mean_decision_time']:.6f}s +/- {aggregate['std_decision_time']:.6f}s")
     print(f"Mean Number of T(s,a) Changes: {aggregate['mean_transition_fn_changes']:.2f} +/- {aggregate['std_transition_fn_changes']:.2f}")
+    print_benchmark_summary(name_prefix, benchmark_data)
     print(f"{'='*50}")
     print(f"Results saved to:    {experiment_dir}")
+
+    if return_artifacts:
+        return {
+            "results_table": results_table,
+            "summary": summary_data,
+            "benchmark": benchmark_data,
+            "metadata": metadata,
+            "experiment_dir": experiment_dir,
+        }
 
     return results_table

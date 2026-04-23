@@ -4,8 +4,9 @@ Configure and return an agent for each competition base environment.
 """
 
 from pathlib import Path
-from stable_baselines3 import PPO
-from AAMAS_Comp.agent import MyModelBasedAgent, MyModelFreeAgent
+
+from AAMAS_Comp.agent import MyModelFreeAgent
+from AAMAS_Comp.agent import MyModelBasedAgent
 
 
 def get_agent(env_id: str):
@@ -21,16 +22,12 @@ def get_agent(env_id: str):
         Agent: Your initialized agent object.
     """
     if env_id == "Ant-v5":
-        model_path = Path("models/ppo_ant/ppo_ant.zip")
-        model = PPO.load(str(model_path))
-        return MyModelFreeAgent(model=model, deterministic=True)
+        return MyModelBasedAgent(d=50, m=100, c=1.4, gamma=0.99)
 
     elif env_id == "FrozenLake-v1":
-        # Minimal, valid model-based baseline.
-        return MyModelBasedAgent(seed=42)
+        return MyModelBasedAgent(d=50, m=100, c=1.4, gamma=0.99)
 
     elif env_id == "CartPole-v1":
-        # Minimal, valid model-based baseline.
-        return MyModelBasedAgent(seed=42)
+        return MyModelBasedAgent(d=50, m=100, c=1.4, gamma=0.99)
 
     raise ValueError(f"{env_id} not in: Ant-v5, FrozenLake-v1, CartPole-v1")
