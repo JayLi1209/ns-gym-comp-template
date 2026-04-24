@@ -20,6 +20,99 @@ def _default_serializer(obj):
         return obj.tolist()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
+
+def _infer_env_family(env) -> str:
+    """Return a coarse environment family for benchmark performance shaping."""
+    class_name = env.unwrapped.__class__.__name__.lower()
+    if "frozenlake" in class_name:
+        return "frozenlake"
+    if "cartpole" in class_name:
+        return "cartpole"
+    return "other"
+
+
+def _value_iteration_frozenlake(
+    transitions,
+    gamma: float = 0.99,
+    tolerance: float = 1e-10,
+    max_iterations: int = 10_000,
+) -> np.ndarray:
+    """Solve for the converged optimal value function of the current FrozenLake MDP."""
+    num_states = len(transitions)
+    values = np.zeros(num_states, dtype=float)
+
+    for _ in range(max_iterations):
+        updated_values = values.copy()
+        delta = 0.0
+
+        for state, action_map in transitions.items():
+            action_values = []
+            for action in action_map:
+                q_value = 0.0
+                for prob, next_state, reward, terminated in action_map[action]:
+                    future_value = 0.0 if terminated else gamma * values[next_state]
+                    q_value += prob * (reward + future_value)
+                action_values.append(q_value)
+
+            if action_values:
+                updated_values[state] = max(action_values)
+                delta = max(delta, abs(updated_values[state] - values[state]))
+
+        values = updated_values
+        if delta < tolerance:
+            break
+
+    return values
+
+
+def _compute_frozenlake_performance(env, obs) -> float:
+    """Return normalized FrozenLake performance using the converged value function."""
+    transitions = getattr(env, "P", None)
+    if transitions is None:
+        transitions = getattr(env.unwrapped, "P", None)
+    if transitions is None:
+        return 0.0
+
+    state = int(obs["state"])
+    values = _value_iteration_frozenlake(transitions)
+    return float(np.clip(values[state], 0.0, 1.0))
+
+
+def _compute_cartpole_performance(env, obs) -> float:
+    """Return normalized CartPole performance using the IsaacGym-style reward."""
+    state = np.asarray(obs["state"], dtype=float)
+    if state.size < 4:
+        return 0.0
+
+    cart_pos, cart_vel, pole_angle, pole_vel = state[:4]
+    reset_dist = float(getattr(env.unwrapped, "x_threshold", 2.4))
+
+    reward = (
+        1.0
+        - pole_angle * pole_angle
+        - 0.01 * abs(cart_vel)
+        - 0.005 * abs(pole_vel)
+    )
+
+    if abs(cart_pos) > reset_dist or abs(pole_angle) > np.pi / 2:
+        reward = -2.0
+
+    reward_min = -2.0
+    reward_max = 1.0
+    normalized_reward = (reward - reward_min) / (reward_max - reward_min)
+    return float(np.clip(normalized_reward, 0.0, 1.0))
+
+
+def _compute_step_performance(env, obs) -> float | None:
+    """Return the benchmark performance signal for the current decision state."""
+    env_family = _infer_env_family(env)
+    if env_family == "frozenlake":
+        return _compute_frozenlake_performance(env, obs)
+    if env_family == "cartpole":
+        return _compute_cartpole_performance(env, obs)
+    return None
+
+
 def run_single_episode(env, agent, seed):
     """Runs single environment episode.
 
@@ -29,7 +122,8 @@ def run_single_episode(env, agent, seed):
         seed (int): Random number generator seed.
 
     Returns:
-        dict: A dictionary containing lists of rewards, observations, actions, and decision times.
+        dict: Per-step evaluation data including raw rewards, benchmark
+        performance values, and disruption metadata.
     """
 
     obs, _ = env.reset(seed=seed)
@@ -40,18 +134,25 @@ def run_single_episode(env, agent, seed):
     episode_metrics = {
         "step_number": [],
         "rewards": [],
+        "performance": [],
         "observations": [],
         "notification": [],
         "actions": [],
         "decision_time": [],
         "info": [],
-        "env_change": []
+        "env_change": [],
+        "disruption_step": [],
     }
 
     is_model_based_agent = isinstance(agent, base_agent.ModelBasedAgent)
     count = 0
+    current_env_changed = 0
 
     while not (done or truncated):
+        if current_env_changed and not episode_metrics["disruption_step"]:
+            episode_metrics["disruption_step"].append(count)
+
+        step_performance = _compute_step_performance(env, obs)
 
         if is_model_based_agent:
             planning_env = env.get_planning_env()
@@ -61,8 +162,6 @@ def run_single_episode(env, agent, seed):
             action, decision_time = agent.validate_and_get_action(obs, env.action_space)
 
         obs, reward, done, truncated, info = env.step(action)
-
-
 
         ground_truth_change = info.get("Ground Truth Env Change", {})
         if ground_truth_change:
@@ -74,7 +173,11 @@ def run_single_episode(env, agent, seed):
             else:
                 env_changed = int(bool(observed_change))
 
+        if step_performance is None:
+            step_performance = float(reward)
+
         episode_metrics["step_number"].append(count)
+        episode_metrics["performance"].append(float(step_performance))
         episode_metrics["observations"].append(obs["state"])
         episode_metrics["notification"].append(obs["env_change"])
         episode_metrics["rewards"].append(reward)
@@ -82,6 +185,7 @@ def run_single_episode(env, agent, seed):
         episode_metrics["decision_time"].append(decision_time)
         episode_metrics["info"].append(info)
         episode_metrics["env_change"].append(env_changed)
+        current_env_changed = env_changed
         count += 1
 
     return episode_metrics
